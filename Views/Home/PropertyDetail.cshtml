@@ -1,0 +1,634 @@
+﻿@{
+    ViewBag.Title = "PropertySummary";
+}
+@section scripts {
+
+    <script src='http://ajax.aspnetcdn.com/ajax/jQuery/jQuery-1.10.2.min.js'></script>
+    <script src='http://ajax.aspnetcdn.com/ajax/jQuery.ui/1.10.3/jQuery-ui.min.js'></script>
+    <script src='http://ajax.aspnetcdn.com/ajax/jQuery.validate/1.11.1/jQuery.validate.min.js'></script>
+    <script src='http://ajax.aspnetcdn.com/ajax/jQuery.validate/1.11.1/additional-methods.min.js'></script>
+    <script src='http://ajax.aspnetcdn.com/ajax/mvc/5.1/jQuery.validate.unobtrusive.min.js'></script>
+
+    <!-- jqGrid -->
+    <link rel=' stylesheet' type='text/css' media='screen' href='~/Content/ui-lightness/jQuery-ui-1.10.4.custom.min.css' />
+    <link rel='stylesheet' type='text/css' media='screen' href='~/Content/jqGrid/ui.jqgrid.css' />
+    <!-- Since the jQuery UI Themes have different font sizes it is a good idea to reduce the font size to make everything uniform. -->
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-size: 90%;
+        }
+    </style>
+    <script src='~/Scripts/jqGrid/i18n/grid.locale-en.js' type='text/javascript'></script>
+    <script src='~/Scripts/jqGrid/jQuery.jqGrid.min.js' type='text/javascript'></script>
+
+    <script type='text/javascript'>
+        var vdPropertyId = '@ViewData["vbPropertyId"]';
+        var docDescId;
+
+        // Seller Summary
+        jQuery('#sellerSumGrid').jqGrid({
+            caption: 'Seller(s)',
+            url: '/SellerSumGrid/getSellers?vbPropertyId=@ViewData["vbPropertyId"]',
+            editurl: '/SellerSumGrid/editContact',
+            datatype: 'json',
+            mtype: 'POST',
+            height: 'auto',
+            rowNum: 10,
+            rowList: [10, 20, 30],
+            colNames: ['Id', 'PropertyId', 'First name', 'Last name', 'Role', 'Email', 'Auto Update', ''],
+            //, 'Home Phone', 'Work Phone', 'Cell Phone'],
+            colModel: [
+                { name: 'Id', width: 100, align: 'center', editable: false, key: true, hidden: true },
+                { name: 'PropertyId', width: 100, align: 'center', editable: true, hidden: true },
+                { name: 'FirstName', width: 100, align: 'center', editable: true },
+                { name: 'LastName', width: 100, align: 'center', editable: true },
+                {
+                    name: 'Role', width: 40, align: 'center', editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: 'P.Seller:P.Seller;Seller:Seller'
+                    },
+                },
+                //{ name: 'PhoneHome', width: 75, align: 'center', editable: true },
+                //{ name: 'PhoneWork', width: 75, align: 'center', editable: true },
+                //{ name: 'PhoneCell', width: 75, align: 'center', editable: true },
+                { name: 'Email', width: 100, align: 'center', editable: true },
+                {
+                    name: 'AutoStatusUpdate',
+                    width: 100,
+                    align: 'center',
+                    editable: true,
+                    editoptions: { value: 'True:False' },
+                    edittype: 'checkbox',
+                    formatter: 'checkbox',
+                    formatoptions: { disabled: false },
+                },
+                { name: 'BUFFER', width: 10, align: 'center', editable: false }
+            ],
+            ondblClickRow: function (rowid, iRow, iCol, e) {
+            },
+            pager: '#sellerSumGridNavBar',
+        });
+
+        jQuery('#sellerSumGrid').jqGrid('navGrid', '#sellerSumGridNavBar',
+            { edit: true, add: true, del: true },
+            // use default settings for edit
+            {},
+            // add
+            {
+                url: '/SellerSumGrid/addContact?vbPropertyId=@ViewData["vbPropertyId"]'
+            },
+            // delete
+            {
+                url: '/SellerSumGrid/deleteContact'
+            }
+        );
+
+        // Lien Summary
+        jQuery('#lienSumGrid').jqGrid({
+            caption: 'Lien(s)',
+            url: '/LienSumGrid/getLiens?vbPropertyId=@ViewData["vbPropertyId"]',
+            editurl: '/LienSumGrid/editLien',
+            datatype: 'json',
+            mtype: 'POST',
+            height: 'auto',
+            rowNum: 10,
+            rowList: [10, 20, 30],
+            colNames: ['Id', 'PropertyId', 'Review Date', 'Type', 'Servicer', 'Account No.', 'Lien Pos',
+                'Settlement Amt', 'Settlement Date', 'Status',
+                'Min Net', 'Max Allowed', 'Valuation', 'Val Date', 'Pay Off Amt', 'Payoff Date', 'Program',
+                'FHA', 'Investor', ''],
+            colModel: [
+                { name: 'Id', width: 100, align: 'center', editable: false, key: true, hidden: true },
+                { name: 'PropertyId', width: 100, align: 'center', editable: true, hidden: true },
+                {
+                    name: 'ReviewDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker({ changeMonth: true, changeYear: true, dateFormat: 'mm/dd/yy' });
+                        },
+                        defaultValue: function () {
+                            var currentTime = new Date();
+                            var month = parseInt(currentTime.getMonth() + 1);
+                            month = month <= 9 ? '0' + month : month;
+                            var day = currentTime.getDate();
+                            day = day <= 9 ? '0' + day : day;
+                            var year = currentTime.getFullYear();
+                            return year + '-' + month + '-' + day;
+                        }
+                    },
+                },
+                {
+                    name: 'Type',
+                    width: 50,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: 'Mort:Mort;Lien:Lien;Other:Other'
+                    },
+                },
+                { name: 'Servicer', width: 150, align: 'center', editable: true },
+                { name: 'AccountNo', width: 75, align: 'center', editable: true },
+                {
+                    name: 'LienPosition',
+                    width: 75, align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: '1:1;2:2;3:3;4:4'
+                    }
+                },
+                {
+                    name: 'SettlementAmt',
+                    width: 75,
+                    align: 'right',
+                    formatter: 'number',
+                    formatoptions: { thousandsSeparator: ',' },
+                    editable: true
+                },
+                {
+                    name: 'SettlementDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker({ changeMonth: true, changeYear: true, dateFormat: 'mm/dd/yy' });
+                        },
+                    },
+
+                },
+                {
+                    name: 'Status',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: 'Doc Coll:Doc Coll;Processing:Processing;Negotiation:Negotiation;Approved:Approved;Closed:Closed'
+                    }
+                },
+                { name: 'MinNetProceeds', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: ',' }, editable: true },
+                { name: 'MaxNetProceeds', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: ',' }, editable: true },
+                { name: 'Valuation', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: ',' }, editable: true },
+                {
+                    name: 'ValuationDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker();
+                        },
+                    },
+                },
+                { name: 'PayoffAmt', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: ',' }, editable: true },
+                {
+                    name: 'PayoffDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker();
+                        },
+                    },
+                },
+                {
+                    name: 'SettlementProgram',
+                    width: 50,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: 'Unk:Unk;HAFA:HAFA;Other:Other;None:None'
+                    },
+                },
+                {
+                    name: 'FHA',
+                    width: 50,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: 'Unk:Unk;Yes:Yes;No:No'
+                    },
+                },
+                {
+                    name: 'Investor', width: 100, align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: 'Unk:Unk;FNMA:FNMA;FRED:FRED;Other:Other'
+                    },
+                },
+
+                { name: 'BUFFER', width: 10, align: 'center', editable: false }
+            ],
+            ondblClickRow: function (rowid, iRow, iCol, e) {
+                window.location.href = '/Home/LienNegotiation?vbPropertyId=@ViewData["vbPropertyId"]'
+            },
+            pager: '#lienSumGridNavBar',
+        });
+
+        var hiddenValuation = false;
+        var hiddenPayoff = false;
+        var hiddenSettlement = false;
+        jQuery('#lienSumGrid').jqGrid('navGrid', '#lienSumGridNavBar',
+            { edit: true, add: true, del: true },
+            // use default settings for edit
+            {},
+            // add
+            {
+
+                url: '/LienSumGrid/addLien?vbPropertyId=@ViewData["vbPropertyId"]'
+                //url: '/LienSumGrid/addLien?vbPropertyId='+ vdPropertyId
+            },
+            // delete
+            {
+                url: '/LienSumGrid/deleteLien'
+            }
+        ).jqGrid('navButtonAdd', '#lienSumGridNavBar',
+        {
+            caption: ' [Payoff] ',
+            buttonicon: 'none',
+            onClickButton: function () {
+                if (hiddenPayoff == true) {
+                    jQuery('#lienSumGrid').jqGrid('showCol', ['PayoffAmt', 'PayoffDate']);
+                    hiddenPayoff = false;
+                }
+                else {
+                    jQuery('#lienSumGrid').jqGrid('hideCol', ['PayoffAmt', 'PayoffDate']);
+                    hiddenPayoff = true;
+                }
+            },
+            position: 'last',
+            //title: '',
+            //cursor: 'pointer'
+        }).jqGrid('navButtonAdd', '#lienSumGridNavBar',
+        {
+            caption: ' [Settlement] ',
+            buttonicon: 'none',
+            onClickButton: function () {
+                if (hiddenSettlement == true) {
+                    jQuery('#lienSumGrid').jqGrid('showCol', ['SettlementAmt', 'SettlementDate']);
+                    hiddenSettlement = false;
+                }
+                else {
+                    jQuery('#lienSumGrid').jqGrid('hideCol', ['SettlementAmt', 'SettlementDate']);
+                    hiddenSettlement = true;
+                }
+            },
+            position: 'last',
+            //title: '',
+            //cursor: 'pointer'
+        }).jqGrid('navButtonAdd', '#lienSumGridNavBar',
+        {
+            caption: ' [Valuation] ',
+            buttonicon: 'none',
+            onClickButton: function () {
+                if (hiddenValuation == true) {
+                    jQuery('#lienSumGrid').jqGrid('showCol', ['Valuation', 'ValuationDate']);
+                    hiddenValuation = false;
+                }
+                else {
+                    jQuery('#lienSumGrid').jqGrid('hideCol', ['Valuation', 'ValuationDate']);
+                    hiddenValuation = true;
+                }
+            },
+            position: 'last',
+            //title: '',
+            //cursor: 'pointer'
+        });
+
+        // Offer Summary
+        jQuery('#offerSumGrid').jqGrid({
+            caption: 'offer(s)',
+            url: '/offerSumGrid/getOffers?vbPropertyId=@ViewData["vbPropertyId"]',
+            editurl: '/offerSumGrid/editOffer',
+            datatype: 'json',
+            mtype: 'POST',
+            height: 'auto',
+            rowNum: 10,
+            rowList: [10, 20, 30],
+            colNames: ['Id', 'PropertyId', 'Offer Date', 'Offer Amt', 'Expire Date', 'Status', ''],
+            colModel: [
+                { name: 'Id', width: 100, align: 'center', editable: false, key: true, hidden: true },
+                { name: 'PropertyId', width: 100, align: 'center', editable: true, hidden: true },
+                {
+                    name: 'OfferDate',
+                    width: 175,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker();
+                        },
+                        defaultValue: function () {
+                            var currentTime = new Date();
+                            var month = parseInt(currentTime.getMonth() + 1);
+                            month = month <= 9 ? '0' + month : month;
+                            var day = currentTime.getDate();
+                            day = day <= 9 ? '0' + day : day;
+                            var year = currentTime.getFullYear();
+                            return year + '-' + month + '-' + day;
+                        }
+                    }
+                },
+                {
+                    name: 'OfferAmt', width: 75, align: 'right', formatter: 'number',
+                    formatoptions: { thousandsSeparator: ',' }, editable: true
+                },
+                {
+                    name: 'ExpireDate',
+                    width: 175,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker({
+                                changeMonth: true, changeYear: true,
+                                dateFormat: 'mm/dd/yy'
+                            });
+                        },
+                        defaultValue: function () {
+                            var currentTime = new Date();
+                            var month = parseInt(currentTime.getMonth() + 1);
+                            month = month <= 9 ? '0' + month : month;
+                            var day = currentTime.getDate();
+                            day = day <= 9 ? '0' + day : day;
+                            var year = currentTime.getFullYear();
+                            return year + '-' + month + '-' + day;
+                        }
+                    }
+                },
+                { name: 'Status', width: 75, align: 'center', editable: true },
+                { name: 'BUFFER', width: 10, align: 'center', editable: false }
+            ],
+            ondblClickRow: function (rowid, iRow, iCol, e) {
+                window.location.href = 'offerDetail';
+            },
+            pager: '#offerSumGridNavBar',
+        });
+
+        jQuery('#offerSumGrid').jqGrid('navGrid', '#offerSumGridNavBar',
+            { edit: true, add: true, del: true },
+            // use default settings for edit
+            {},
+            // add
+            {
+                url: '/offerSumGrid/addOffer?vbPropertyId=@ViewData["vbPropertyId"]'
+            },
+            // delete
+            {
+                url: '/offerSumGrid/deleteOffer'
+            }
+        );
+
+        // Doc Descriptions
+        jQuery('#docDescGrid').jqGrid({
+            caption: 'Document Library',
+            url: '/DocDescGrid/getDocDescs?vbPropertyId=@ViewData["vbPropertyId"]',
+            editurl: '/DocDescGrid/editDocDesc',
+            datatype: 'json',
+            mtype: 'POST',
+            height: 'auto',
+            rowNum: 10,
+            rowList: [10, 20, 30],
+            // Update onCellSelect if columns are added
+            colNames: ['Id', 'PropertyId', 'Type', 'Description', 'Expire Date',
+                'Create Date', 'File Name', 'Upload File', ''],
+            colModel: [
+                { name: 'Id', width: 100, align: 'center', editable: false, key: true, hidden: true },
+                { name: 'PropertyId', width: 100, align: 'center', editable: true, hidden: true },
+                {
+                    name: 'Type', width: 100, align: 'center', editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: 'Paystub:Paystub;BankStmt:BankStmt;Tax:Tax;RMA:RMA;Other:Other'
+                    },
+                },
+                { name: 'Description', width: 150, align: 'center', editable: true },
+                {
+                    name: 'ExpireDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker();
+                        },
+                        defaultValue: function () {
+                            var currentTime = new Date();
+                            var month = parseInt(currentTime.getMonth() + 1);
+                            month = month <= 9 ? '0' + month : month;
+                            var day = currentTime.getDate();
+                            day = day <= 9 ? '0' + day : day;
+                            var year = currentTime.getFullYear();
+                            return year + '-' + month + '-' + day;
+                        }
+                    },
+                },
+                {
+                    name: 'CreateDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker();
+                        },
+                        defaultValue: function () {
+                            var currentTime = new Date();
+                            var month = parseInt(currentTime.getMonth() + 1);
+                            month = month <= 9 ? '0' + month : month;
+                            var day = currentTime.getDate();
+                            day = day <= 9 ? '0' + day : day;
+                            var year = currentTime.getFullYear();
+                            return year + '-' + month + '-' + day;
+                        }
+                    },
+                },
+                { name: 'FileName', width: 150, align: 'center', editable: true },
+                {
+                    name: 'Uploadfile',
+                    editable: false,
+                    width: 100,
+                    align: 'center',
+                },
+                { name: 'BUFFER', width: 10, align: 'center', editable: false },
+            ],
+            onCellSelect: function (rowid, icol, cellcontent, e) {
+                // Upload button selected
+                if (icol == 8) {
+                    docDescId = rowid;
+                    // get file name
+                    jQuery('#dialog-block').dialog('open');
+                }
+                else {
+                    return true;
+                }
+            },
+            ondblClickRow: function (rowid, iRow, iCol, e) {
+                window.location.href = '/Home/Email?vbPropertyId=@ViewData["vbPropertyId"]';
+            },
+            pager: '#docDescGridNavBar',
+
+            subGrid: true,
+            subGridRowExpanded: function (subgrid_id, row_id) {
+                // we pass two parameters
+                // subgrid_id is a id of the div tag created within a table
+                // the row_id is the id of the row
+                // If we want to pass additional parameters to the url we can use
+                // the method getRowData(row_id) - which returns associative array in type name-value
+                // here we can easy construct the following
+                var subgrid_table_id;
+                subgrid_table_id = subgrid_id + '_t';
+                jQuery('#' + subgrid_id).html("<table id='" + subgrid_table_id + "' class='scroll'></table>");
+                jQuery('#' + subgrid_table_id).jqGrid({
+                    url: '/DocHistGrid/getDocHist?docDescId=' + row_id,
+                    datatype: 'json',
+                    mtype: 'POST',
+                    colNames: ['', 'Id', 'EFDocDesc', 'EFContact', 'EFLien', 'Date', 'Action'],
+                    colModel: [
+                        { name: 'BUFFER', width: 30, align: 'center', editable: false },
+                        { name: 'Id', align: 'center', width: 80, key: true, hidden: true },
+                        { name: 'EFDocDesc', align: 'center', width: 80, hidden: true },
+                        { name: 'EFContact', align: 'center', width: 80, hidden: true },
+                        { name: 'EFLien', align: 'center', width: 80, hidden: true },
+                        { name: 'Date', width: 100, align: 'center' },
+                        { name: 'Action', width: 80, align: 'center' }
+                    ],
+                    height: 'auto',
+                    rowNum: 20
+                });
+            },
+        });
+
+        jQuery('#docDescGrid').jqGrid('navGrid', '#docDescGridNavBar',
+            { edit: true, add: true, del: true },
+            // use default settings for edit
+            {},
+            // add
+            {
+                url: '/DocDescGrid/addDocDesc?vbPropertyId=@ViewData["vbPropertyId"]'
+            },
+                // delete
+                {
+                    url: '/DocDescGrid/deleteDocDesc'
+                }
+            ).jqGrid('navButtonAdd', '#docDescGridNavBar',
+            {
+                caption: '[Doc List]',
+                buttonicon: 'none',
+                onClickButton: function () {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '/DocDescGrid/genericDocDescList?vbPropertyId=@ViewData["vbPropertyId"]',
+                        datatype: 'html'
+                    })
+                },
+                position: 'last',
+                //title: '',
+                //cursor: 'pointer'
+            });
+
+        function uploadFile() {
+            var formData = new FormData();
+            formData.append('DocumentName',
+                document.getElementById('fileSelectControl').files[0],
+                document.getElementById('fileSelectControl').files[0].name);
+            var xhr = new XMLHttpRequest();
+            //xhr.upload.addEventListener('progress', uploadProgress, false);
+            //xhr.addEventListener('load', uploadFinish, false);
+            //xhr.addEventListener('error', uploadError, false);
+            //xhr.addEventListener('abort', uploadAbort, false);
+            xhr.open('POST', '/FileUpload/FileUpload?vbPropertyId=@ViewData["vbPropertyId"]' + '&docDescId=' + docDescId, false);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    // File(s) uploaded.
+                    // uploadButton.innerHTML = 'Upload';
+                } else {
+                    alert('An error occurred!');
+                }
+            };
+            xhr.send(formData);
+        }
+
+
+        jQuery('#dialog-block').dialog({
+            autoOpen: false,
+            width: 400,
+            modal: true,
+            buttons: {
+                "Cancel": function () {
+                    $('#dialog-block').dialog('close');
+                },
+                "Save": function () {
+                    //
+                    //var fileName = document.getElementById('fileSelectControl').files[0].name;
+                    //var fullPath = document.getElementById('fileSelectControl').files[0].type;
+                    //var fileSize = document.getElementById('fileSelectControl').files[0].size;
+                    //alert(fileSelected);
+                    //
+                    // if a file was selected attempt to upload it
+                    var fileSelected = document.getElementById('fileSelectControl').files.length;
+                    if (fileSelected == 1) {
+                        uploadFile();
+                    }
+                    $('#dialog-block').dialog('close');
+                    jQuery('#docDescGrid').trigger('reloadGrid');
+                },
+            }
+        });
+
+    </script>
+}
+
+<div class='jumbotron'></div>
+
+<p>'@ViewData["Address"]'</p>
+
+<p>
+    <table id='sellerSumGrid'></table>
+    <div id='sellerSumGridNavBar'></div>
+</p>
+
+<p>
+    <table id='lienSumGrid'></table>
+    <div id='lienSumGridNavBar'></div>
+</p>
+
+<p>
+    <table id='offerSumGrid'></table>
+    <div id='offerSumGridNavBar'></div>
+</p>
+
+<p>
+    <table id='docDescGrid'></table>
+    <div id='docDescGridNavBar'></div>
+
+    <table id='docHistGrid'></table>
+    <div id='docHistGridNavBar'></div>
+</p>
+
+<div id="dialog-block" title="ASP.NET MVC Plays Nice with jQuery UI">
+    <p>
+
+        <input type="file" id="fileSelectControl" />
+    </p>
+</div>  

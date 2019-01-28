@@ -1,0 +1,336 @@
+﻿@{
+    ViewBag.Title = "LienNegotiation";
+}
+
+@section scripts {
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.2.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.ui/1.10.3/jquery-ui.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/additional-methods.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/mvc/5.1/jquery.validate.unobtrusive.min.js"></script>
+
+    <!-- jqGrid -->
+    <link rel="stylesheet" type="text/css" media="screen" href="~/Content/ui-lightness/jquery-ui-1.10.4.custom.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="~/Content/jqGrid/ui.jqgrid.css" />
+    <!-- Since the jQuery UI Themes have different font sizes it is a good idea to reduce the font size to make everything uniform. -->
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-size: 90%;
+        }
+    </style>
+    <script src="~/Scripts/jqGrid/i18n/grid.locale-en.js" type="text/javascript"></script>
+    <script src="~/Scripts/jqGrid/jquery.jqGrid.min.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+
+    // the id of currently selected lien from lienSumGrid used to synchronize lienContactGrid
+    var selectedLienId = "-1";
+
+    // Lien Summary
+    jQuery('#lienSumGrid').jqGrid({
+        caption: 'Lien(s)',
+        url: '/LienSumGrid/getLiens?vbPropertyId=@ViewData["vbPropertyId"]',
+            editurl: '/LienSumGrid/editLien',
+            datatype: 'json',
+            mtype: 'POST',
+            height: 'auto',
+            rowNum: 10,
+            rowList: [10, 20, 30],
+            //recreateForm : 'true',
+            colNames: ['Id', 'PropertyId', 'Review Date', 'Type', 'Servicer', 'Account No.', 'Lien Pos',
+                'Settlement Amt', 'Settlement Date', 'Status',
+                'Min Net', 'Max Allowed', 'Valuation', 'Val Date', 'Pay Off Amt', 'Payoff Date', 'Program',
+                'FHA', 'Investor', ''],
+            colModel: [
+                { name: 'Id', width: 100, align: 'center', editable: false, key: true, hidden: true },
+                { name: 'PropertyId', width: 100, align: 'center', editable: true, hidden: true },
+                {
+                    name: 'ReviewDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker({ changeMonth: true, changeYear: true, dateFormat: 'mm/dd/yy' });
+                        },
+                        defaultValue: function () {
+                            var currentTime = new Date();
+                            var month = parseInt(currentTime.getMonth() + 1);
+                            month = month <= 9 ? "0" + month : month;
+                            var day = currentTime.getDate();
+                            day = day <= 9 ? "0" + day : day;
+                            var year = currentTime.getFullYear();
+                            return year + "-" + month + "-" + day;
+                        }
+                    },
+                },
+                {
+                    name: 'Type',
+                    width: 50,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: "Mort:Mort;Lien:Lien;Other:Other"
+                    },
+                },
+                { name: 'Servicer', width: 150, align: 'center', editable: true },
+                { name: 'AccountNo', width: 75, align: 'center', editable: true },
+                { name: 'LienPosition', width: 75, align: 'center', editable: true },
+                {
+                    name: 'SettlementAmt',
+                    width: 75,
+                    align: 'right',
+                    formatter: 'number',
+                    formatoptions: { thousandsSeparator: "," },
+                    editable: true
+                },
+                {
+                    name: 'SettlementDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker({ changeMonth: true, changeYear: true, dateFormat: 'mm/dd/yy' });
+                        },
+                    },
+
+                },
+                {
+                    name: 'Status',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: "Doc Coll:Doc Coll;Processing:Processing;Negotiation:Negotiation;Approved:Approved;Closed:Closed"
+                    }
+                },
+                { name: 'MinNetProceeds', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: "," }, editable: true },
+                { name: 'MaxNetProceeds', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: "," }, editable: true },
+                { name: 'Valuation', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: "," }, editable: true },
+                {
+                    name: 'ValuationDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker();
+                        },
+                    },
+                },
+                { name: 'PayoffAmt', width: 75, align: 'right', formatter: 'number', formatoptions: { thousandsSeparator: "," }, editable: true },
+                {
+                    name: 'PayoffDate',
+                    width: 80,
+                    align: 'center',
+                    editable: true,
+                    editoptions: {
+                        size: 12,
+                        dataInit: function (el) {
+                            jQuery(el).datepicker();
+                        },
+                    },
+                },
+                {
+                    name: 'SettlementProgram',
+                    width: 50,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: "Unk:Unk;HAFA:HAFA;Other:Other;None:None"
+                    },
+                },
+                {
+                    name: 'FHA',
+                    width: 50,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: "Unk:Unk;Yes:Yes;No:No"
+                    },
+                },
+                {
+                    name: 'Investor', width: 100, align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: "Unk:Unk;FNMA:FNMA;FRED:FRED;Other:Other"
+                    },
+                },
+
+                { name: 'BUFFER', width: 10, align: "center", editable: false }
+            ],
+            ondblClickRow: function (rowid, iRow, iCol, e) {
+            },
+            onSelectRow: function (id) {
+                selectedLienId = id;
+                // update lienContactgrid with contacts related to selected lien
+                jQuery('#lienContactGrid').trigger('reloadGrid');
+            },
+            pager: '#lienSumGridNavBar',
+        });
+
+        var hiddenValuation = false;
+        var hiddenPayoff = false;
+        var hiddenSettlement = false;
+        jQuery("#lienSumGrid").jqGrid('navGrid', "#lienSumGridNavBar",
+            { edit: true, add: true, del: true },
+            // use default settings for edit
+            {},
+            // add
+            {
+                url: '/LienSumGrid/addLien?vbPropertyId=@ViewData["vbPropertyId"]'
+            },
+            // delete
+            {
+                url: '/LienSumGrid/deleteLien'
+            }
+        ).jqGrid('navButtonAdd', "#lienSumGridNavBar",
+        {
+            caption: "[Payoff]",
+            buttonicon: "none",
+            onClickButton: function () {
+                if (hiddenPayoff == true) {
+                    jQuery("#lienSumGrid").jqGrid('showCol', ["PayoffAmt", "PayoffDate"]);
+                    hiddenPayoff = false;
+                }
+                else {
+                    jQuery("#lienSumGrid").jqGrid('hideCol', ["PayoffAmt", "PayoffDate"]);
+                    hiddenPayoff = true;
+                }
+            },
+            position: "last",
+            //title: "",
+            //cursor: "pointer"
+        }).jqGrid('navButtonAdd', "#lienSumGridNavBar",
+        {
+            caption: "[Settlement]",
+            buttonicon: "none",
+            onClickButton: function () {
+                if (hiddenSettlement == true) {
+                    jQuery("#lienSumGrid").jqGrid('showCol', ["SettlementAmt", "SettlementDate"]);
+                    hiddenSettlement = false;
+                }
+                else {
+                    jQuery("#lienSumGrid").jqGrid('hideCol', ["SettlementAmt", "SettlementDate"]);
+                    hiddenSettlement = true;
+                }
+            },
+            position: "last",
+            //title: "",
+            //cursor: "pointer"
+        }).jqGrid('navButtonAdd', "#lienSumGridNavBar",
+        {
+            caption: "[Valuation]",
+            buttonicon: "none",
+            onClickButton: function () {
+                if (hiddenValuation == true) {
+                    jQuery("#lienSumGrid").jqGrid('showCol', ["Valuation", "ValuationDate"]);
+                    hiddenValuation = false;
+                }
+                else {
+                    jQuery("#lienSumGrid").jqGrid('hideCol', ["Valuation", "ValuationDate"]);
+                    hiddenValuation = true;
+                }
+            },
+            position: "last",
+            //title: "",
+            //cursor: "pointer"
+        });
+
+        // Lien Contact Summary
+        jQuery('#lienContactGrid').jqGrid({
+            caption: '',
+            url: '/LienContactGrid/getLienContacts',
+            editurl: '',
+            postData: {
+                selectedLienId: function () {
+                    // selectedLienId synchronizes the contact grid
+                    return selectedLienId
+                }
+            },
+            datatype: 'json',
+            mtype: 'POST',
+            height: 'auto',
+            rowNum: 10,
+            rowList: [10, 20, 30],
+            colNames: ['Id', 'LienId', 'First name', 'Last name', 'Role', ''],
+            //, 'Home Phone', 'Work Phone', 'Cell Phone', 'Email'],
+            colModel: [
+                { name: 'Id', width: 100, align: 'center', editable: false, key: true, hidden: true },
+                // field must be editable if its not a key in order to include in the submit request
+                { name: 'LienId', width: 100, align: 'center', editable: true, hidden: true },
+                { name: 'FirstName', width: 100, align: 'center', editable: true },
+                { name: 'LastName', width: 100, align: 'center', editable: true },
+                {
+                    name: 'Role',
+                    width: 40,
+                    align: 'center',
+                    editable: true,
+                    edittype: 'select',
+                    editoptions: {
+                        value: "Proc:Proc;Neg:Neg;Mngmnt:Mngmnt;Closer:Closer"},
+                },
+                //{ name: 'PhoneHome', width: 75, align: 'center', editable: true },
+                //{ name: 'PhoneWork', width: 75, align: 'center', editable: true },
+                //{ name: 'PhoneCell', width: 75, align: 'center', editable: true },
+                //{ name: 'Email', width: 100, align: 'center', editable: true }
+                { name: 'BUFFER', width: 10, align: "center", editable: false }
+            ],
+            ondblClickRow: function (rowid, iRow, iCol, e) {
+            },
+            pager: '#lienContactGridNavBar',
+        });
+
+        jQuery("#lienContactGrid").jqGrid(
+            'navGrid',
+            "#lienContactGridNavBar",
+            { edit: true, add: true, del: true },
+            // edit
+            {
+                url: '/LienContactGrid/editContact'
+            },
+            // add
+            {
+                // returns the id of currently selected lien from lienSumGrid
+                editData: {
+                    selectedLienId: function () {
+                        return selectedLienId
+                    }
+                },
+                url: '/LienContactGrid/addContact'
+            },
+            // delete
+            {
+                url: '/LienContactGrid/deleteContact'
+            }
+        );
+
+    </script>
+}
+
+<div class="jumbotron"></div>
+
+<p>'@ViewData["Address"]'</p>
+<p>'@ViewData["Seller"]'</p>
+<p>'@ViewData["Last6"]'</p>
+
+<p>
+    <table id="lienSumGrid"></table>
+    <div id="lienSumGridNavBar"></div>
+</p>
+
+<p>
+    <table id="lienContactGrid"></table>
+    <div id="lienContactGridNavBar"></div>
+</p>
